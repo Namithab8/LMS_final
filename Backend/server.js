@@ -40,15 +40,9 @@ const app = express();
 
 // ===== CORS =====
 const allowedOrigins = [
-  'https://lmsfinal-lmuvpn8oy-namitha8112004-5051s-projects.vercel.app',
-  'https://lms-final-3g9m.vercel.app/',
-  'https://lms-updated-chatboot.vercel.app',
-  'https://6962580c9b1d4b1b9f83b690--starlit-semolina-2b245a.netlify.app',
+  'https://lmsfinal-eight.vercel.app',
   'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
-  'http://127.0.0.1:5173',
-  'https://your-frontend-domain.com',
+  
 ];
 
 app.use(
