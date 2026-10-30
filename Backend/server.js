@@ -40,6 +40,7 @@ const app = express();
 
 // ===== CORS =====
 const allowedOrigins = [
+  'https://lms-final-3g9m.vercel.app/',
   'https://lms-updated-chatboot.vercel.app',
   'https://6962580c9b1d4b1b9f83b690--starlit-semolina-2b245a.netlify.app',
   'http://localhost:5173',
