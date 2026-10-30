@@ -13,6 +13,8 @@ const HF_API_KEY = process.env.HF_API_KEY;
 const HF_MODEL_ID = process.env.HF_MODEL_ID || 'Qwen/Qwen2.5-7B-Instruct';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 // If you are on Node < 18, uncomment next 2 lines and install node-fetch:
 // import fetch from 'node-fetch';
@@ -75,6 +77,38 @@ async function generateFromOpenAI(messages) {
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`OpenAI error ${response.status}: ${text}`);
+  }
+
+  const data = await response.json();
+  const reply = data.choices?.[0]?.message?.content?.trim() || '';
+  return reply;
+}
+
+async function generateFromGroq(messages) {
+  if (!GROQ_API_KEY) {
+    throw new Error('GROQ_API_KEY is not set in environment variables.');
+  }
+
+  const response = await fetch(
+    'https://api.groq.com/openai/v1/chat/completions',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages,
+        max_tokens: 256,
+        temperature: 0.3,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Groq error ${response.status}: ${text}`);
   }
 
   const data = await response.json();
@@ -197,25 +231,31 @@ ${context}
     { role: 'user', content: message },
   ];
 
-  // Try Hugging Face first, fall back to OpenAI if it fails
+  // Try Groq first (free and fast), then Hugging Face, then OpenAI
   try {
-    const reply = await generateFromHF(messagesForHF);
+    const reply = await generateFromGroq(messagesForHF);
     return reply || 'Sorry, I could not generate an answer.';
-  } catch (hfError) {
-    console.error('Hugging Face failed, trying OpenAI:', hfError.message);
+  } catch (groqError) {
+    console.error('Groq failed, trying Hugging Face:', groqError.message);
     try {
-      const reply = await generateFromOpenAI(messagesForHF);
+      const reply = await generateFromHF(messagesForHF);
       return reply || 'Sorry, I could not generate an answer.';
-    } catch (openaiError) {
-      console.error('OpenAI also failed:', openaiError.message);
+    } catch (hfError) {
+      console.error('Hugging Face failed, trying OpenAI:', hfError.message);
+      try {
+        const reply = await generateFromOpenAI(messagesForHF);
+        return reply || 'Sorry, I could not generate an answer.';
+      } catch (openaiError) {
+        console.error('OpenAI also failed:', openaiError.message);
 
-      // Simple fallback response when both APIs have no credits
-      if (roleUpper === 'ADMIN') {
-        return 'I apologize, but the AI chat service is currently unavailable due to API credit limitations. As an admin, you can check your dashboard stats, manage users, and handle requests directly from the admin panel.';
-      } else if (roleUpper === 'LIBRARIAN') {
-        return 'I apologize, but the AI chat service is currently unavailable due to API credit limitations. As a librarian, you can manage books, borrowings, and student requests from your dashboard.';
-      } else {
-        return 'I apologize, but the AI chat service is currently unavailable due to API credit limitations. You can browse available books, check your borrowed items, and manage your account from your dashboard.';
+        // Simple fallback response when all APIs fail
+        if (roleUpper === 'ADMIN') {
+          return 'I apologize, but the AI chat service is currently unavailable. As an admin, you can check your dashboard stats, manage users, and handle requests directly from the admin panel.';
+        } else if (roleUpper === 'LIBRARIAN') {
+          return 'I apologize, but the AI chat service is currently unavailable. As a librarian, you can manage books, borrowings, and student requests from your dashboard.';
+        } else {
+          return 'I apologize, but the AI chat service is currently unavailable. You can browse available books, check your borrowed items, and manage your account from your dashboard.';
+        }
       }
     }
   }
