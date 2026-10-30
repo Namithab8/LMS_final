@@ -25,10 +25,11 @@ import membershipRequestRoutes from './routes/membershipRequestRoutes.js';
 import emailTestRoutes from './routes/emailTestRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 
-// NEW: priority request, recommendations, chat
+// NEW: priority request, recommendations, chat, dashboard
 import priorityRequestRoutes from './routes/priorityRequestRoutes.js';
 import recommendationRoutes from './routes/recommendationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
 
 // Ensure Admin
 import { ensureAdminExists } from './controllers/adminController.js';
@@ -86,6 +87,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/priority-requests', priorityRequestRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 app.use("/api", debugNotificationRoutes);
 
 // Health check

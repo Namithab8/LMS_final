@@ -11,7 +11,7 @@ import {
   FaCheckCircle,
   FaHome,
 } from "react-icons/fa";
-import ReportStats from "../admin/ReportStats";
+import LibrarianStats from "./LibrarianStats";
 
 export default function LibrarianDashboard() {
   const navigate = useNavigate();
@@ -265,7 +265,7 @@ export default function LibrarianDashboard() {
 
           {isDashboardRoute ? (
             <div className="card shadow-sm p-4 rounded-4 border-0">
-              <ReportStats />
+              <LibrarianStats />
             </div>
           ) : (
             <Outlet />

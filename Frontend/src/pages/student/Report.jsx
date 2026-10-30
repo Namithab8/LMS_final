@@ -1,19 +1,58 @@
 // src/pages/student/Report.jsx
-import React from "react";
-import { Container, Row, Col, Card } from "react-bootstrap";
+import React, { useState, useEffect } from "react";
+import { Container, Row, Col, Card, Spinner } from "react-bootstrap";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { FaBook, FaBookOpen, FaExclamationCircle } from "react-icons/fa";
+import { FaBook, FaBookOpen, FaExclamationCircle, FaClock, FaMoneyBillWave } from "react-icons/fa";
+import { request } from "../../services/api";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const studentStats = [
-  { name: "Available Books", value: 120 },
-  { name: "Borrowed Books", value: 5 },
-  { name: "Overdue Books", value: 1 },
-];
-
-const COLORS = ["#4dabf7", "#51cf66", "#ff6b6b"];
+const COLORS = ["#4dabf7", "#51cf66", "#ff6b6b", "#fbbf24"];
 
 export default function Report() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const data = await request('/dashboard/student');
+      setStats(data);
+    } catch (err) {
+      setError('Failed to load statistics');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-danger p-4">
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  // Prepare chart data
+  const studentStats = [
+    { name: "Available Books", value: stats.totalAvailableBooks },
+    { name: "Borrowed Books", value: stats.borrowedBooks },
+    { name: "Overdue Books", value: stats.overdueBooks },
+    { name: "Pending Requests", value: stats.pendingRequests },
+  ].filter(item => item.value > 0);
+
   return (
     <div
       style={{
@@ -60,7 +99,7 @@ export default function Report() {
 
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             <Row className="g-4 mb-4">
-              <Col lg={4} md={4} sm={6} xs={12}>
+              <Col lg={3} md={4} sm={6} xs={12}>
                 <Card
                   className="border-0 h-100"
                   style={{
@@ -79,7 +118,7 @@ export default function Report() {
                       color: "#111827",
                     }}
                   >
-                    120
+                    {stats.totalAvailableBooks}
                   </h3>
                   <p
                     style={{
@@ -93,7 +132,7 @@ export default function Report() {
                 </Card>
               </Col>
 
-              <Col lg={4} md={4} sm={6} xs={12}>
+              <Col lg={3} md={4} sm={6} xs={12}>
                 <Card
                   className="border-0 h-100"
                   style={{
@@ -112,7 +151,7 @@ export default function Report() {
                       color: "#111827",
                     }}
                   >
-                    5
+                    {stats.borrowedBooks}
                   </h3>
                   <p
                     style={{
@@ -126,7 +165,7 @@ export default function Report() {
                 </Card>
               </Col>
 
-              <Col lg={4} md={4} sm={12} xs={12}>
+              <Col lg={3} md={4} sm={6} xs={12}>
                 <Card
                   className="border-0 h-100"
                   style={{
@@ -149,7 +188,7 @@ export default function Report() {
                       color: "#111827",
                     }}
                   >
-                    1
+                    {stats.overdueBooks}
                   </h3>
                   <p
                     style={{
@@ -159,6 +198,43 @@ export default function Report() {
                     }}
                   >
                     Overdue Books
+                  </p>
+                </Card>
+              </Col>
+
+              <Col lg={3} md={4} sm={6} xs={12}>
+                <Card
+                  className="border-0 h-100"
+                  style={{
+                    borderRadius: "18px",
+                    padding: "18px 10px",
+                    textAlign: "center",
+                    background: "linear-gradient(135deg, #fef3c7, #ffffff)",
+                    boxShadow: "0 10px 24px rgba(251,191,36,0.18)",
+                  }}
+                >
+                  <FaMoneyBillWave
+                    size={38}
+                    className="mb-2"
+                    color="#d97706"
+                  />
+                  <h3
+                    style={{
+                      fontWeight: 700,
+                      marginBottom: 4,
+                      color: "#111827",
+                    }}
+                  >
+                    ₹{stats.totalOutstandingFine}
+                  </h3>
+                  <p
+                    style={{
+                      fontWeight: 500,
+                      marginBottom: 0,
+                      color: "#374151",
+                    }}
+                  >
+                    Outstanding Fine
                   </p>
                 </Card>
               </Col>
@@ -236,13 +312,16 @@ export default function Report() {
                     }}
                   >
                     <li className="mb-2">
-                      • You currently have <strong>5</strong> books checked out.
+                      • You currently have <strong>{stats.borrowedBooks}</strong> books checked out.
                     </li>
                     <li className="mb-2">
-                      • Only <strong>1</strong> book is overdue, return it soon to avoid extra fines.
+                      • <strong>{stats.overdueBooks}</strong> book{stats.overdueBooks !== 1 ? 's are' : ' is'} overdue, return {stats.overdueBooks !== 1 ? 'them' : 'it'} soon to avoid extra fines.
+                    </li>
+                    <li className="mb-2">
+                      • You have <strong>{stats.pendingRequests}</strong> pending book request{stats.pendingRequests !== 1 ? 's' : ''}.
                     </li>
                     <li className="mb-0">
-                      • More than <strong>100</strong> books are available to explore.
+                      • Outstanding fine: <strong>₹{stats.totalOutstandingFine}</strong>
                     </li>
                   </ul>
                 </Card>
